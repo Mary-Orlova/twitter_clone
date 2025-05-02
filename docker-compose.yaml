@@ -1,0 +1,23 @@
+version: '3'
+services:
+  web:
+    build: ./back/web
+    command: uvicorn project.main:app --host 0.0.0.0 --port 1111
+    volumes:
+      - ./back/web:/code
+    depends_on:
+      - db
+
+  nginx:
+    build: ./back/nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: diplom_project
