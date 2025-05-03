@@ -4,7 +4,11 @@ import uvicorn
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from logging_config import setup_custom_logger
+
+from back.web.project.logging_config import setup_custom_logger
+from back.web.project.tweets.routes import router as tweets_router
+from back.web.project.users.routes import router as users_router
+from back.web.project.users.schemas import UserResultOutSchema
 
 logger = setup_custom_logger(__name__)
 
@@ -18,7 +22,9 @@ app = FastAPI(
 static_path = Path(__file__).parent.parent.parent / "dist" / "static"
 
 # Проверка пути
-# logger.info(f"Фактический путь: {static_path.absolute()} | Существует: {static_path.exists()}")
+logger.info(
+    f"Фактический путь: {static_path.absolute()} | Существует: {static_path.exists()}"
+)
 
 # Монтируем статику
 app.mount("/static", StaticFiles(directory=str(static_path), html=True), name="static")
@@ -29,12 +35,28 @@ api_router = APIRouter()
 
 
 # Стартовая страница корня проекта
-@api_router.get("/")
+@api_router.get(
+    "/",
+    summary="Стартовая страница",
+    response_description="Возвращает статическую стартовую страницу",
+)
 async def root():
+    """
+    Возвращает статическую стартовую страницу проекта.
+
+    - Для работы с API используйте документацию по адресу /docs (Swagger UI).
+    - Для подробной информации обратитесь к README.
+    """
+
     return FileResponse(static_path / "index.html")
 
 
-@api_router.get("/users/me")
+@api_router.get(
+    "/users/me",
+    summary="Предоставляет информацию о текущем пользователе",
+    response_description="Возвращает id, name, followers, following",
+    response_model=UserResultOutSchema,
+)
 async def about_me():
     return {
         "result": "true",
@@ -47,11 +69,20 @@ async def about_me():
     }
 
 
-@app.get("/api/test")
-def test1():
+@api_router.get(
+    "/test", summary="Тест api/test", response_description="Возвращает id и name"
+)
+async def test1():
     return {"id": 1, "name": "Mary"}
 
 
+# Подключение роутера пользователей к основному роутеру
+api_router.include_router(users_router)
+
+# Подключение роутера твитов к основному роутеру
+api_router.include_router(tweets_router)
+
+# Подключаем основной роутер к приложению
 app.include_router(api_router, prefix="/api")
 
 if __name__ == "__main__":

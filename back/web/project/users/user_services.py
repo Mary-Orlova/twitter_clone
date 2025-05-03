@@ -1,6 +1,7 @@
 """
-Сервисные функции для работы с пользователями и подписками (users и followers).
-Для пользователя; создание, получение, оформление и удаление подписки, получение информации о себе.
+Асинхронные сервисные функции для работы с пользователями и подписками (users и followers).
+Для пользователя: Метод получения пользователя по API-ключу,
+                    создание, получение, оформление и удаление подписки, получение информации о себе.
 """
 
 from sqlalchemy import delete, insert, select
@@ -18,7 +19,6 @@ async def get_user_by_api_key(session: AsyncSession, api_key: str) -> User:
 
     :param session: Асинхронная сессия SQLAlchemy.
     :param api_key: API-ключ пользователя.
-    :raises BackendExeption: Если пользователь не найден.
     :return: Объект пользователя (User).
     """
 
@@ -29,17 +29,7 @@ async def get_user_by_api_key(session: AsyncSession, api_key: str) -> User:
     # Если пользователь не найден - выбрасываем исключение
     if not user:
         raise BackendExeption(
-            error_type="NO USER", error_message="No user with such api-key"
-        )
-
-    return user
-
-    query_result = await session.execute(select(User).where(User.api_key == api_key))
-    user = query_result.scalars().one_or_none()
-
-    if not user:
-        raise BackendExeption(
-            error_type="NO USER", error_message="No user with such api-key"
+            error_type="NO USER", error_message="Нет пользователя с таким api-key"
         )
 
     return user
@@ -51,7 +41,6 @@ async def post_follow_to_user(session: AsyncSession, api_key: str, user_id: int)
     :param session: асинхронная сессия SQLAlchemy.
     :param api_key: API-ключ пользователя, который подписывается.
     :param user_id: id пользователя, на которого подписываются.
-    :raises BackendExeption: Если пользователь не найден, подписка невозможна или уже существует.
     :return: None
     """
 
@@ -95,7 +84,6 @@ async def delete_follow_to_user(session: AsyncSession, api_key: str, user_id: in
     :param session: асинхронная сессия SQLAlchemy.
     :param api_key: API-ключ пользователя, который отписывается.
     :param user_id: id пользователя, от которого отписываются.
-    :raises BackendExeption: Если такой подписки не существует.
     :return: None
     """
 
@@ -152,7 +140,6 @@ async def get_user(session: AsyncSession, user_id: int):
     Метод создания нового пользователя
     :param session: асинхронная сессия SQLAlchemy.
     :param user_id: ID пользователя.
-    :raises BackendExeption: Если пользователь не найден.
     :return: Словарь с результатом и объектом пользователя.
     """
     query_result = await session.execute(

@@ -7,7 +7,8 @@ from typing import Union
 from fastapi import APIRouter, Depends, Header, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..database import get_session
+from back.web.project.database import get_session
+
 from ..exeptions import BackendExeption
 from ..schemas_overal import ErrorSchema, OnlyResult
 from ..users.schemas import UserIn, UserOut, UserResultOutSchema
@@ -48,9 +49,9 @@ async def post_follow_to_user_handler(
     try:
         await post_follow_to_user(session=session, api_key=api_key, user_id=id)
         return {"result": True}
-    except BackendExeption as e:
+    except BackendExeption as error:
         response.status_code = 404
-        return e
+        return error
 
 
 @router.delete(
@@ -78,9 +79,9 @@ async def delete_follow_to_user_handler(
     try:
         await delete_follow_to_user(session=session, api_key=api_key, user_id=id)
         return {"result": True}
-    except BackendExeption as e:
+    except BackendExeption as error:
         response.status_code = 404
-        return e
+        return error
 
 
 @router.get(
@@ -105,15 +106,15 @@ async def get_user_me_handler(
     """
     try:
         return await get_user_me(session=session, api_key=api_key)
-    except BackendExeption as e:
+    except BackendExeption as error:
         response.status_code = 404
-        return e
+        return error
 
 
 @router.get(
     "/{id}",
     summary="Получение информации о пользователе по id",
-    response_description="Информация о ользователе",
+    response_description="Информация о пользователе",
     response_model=Union[UserResultOutSchema, ErrorSchema],
     status_code=200,
 )
@@ -130,9 +131,9 @@ async def get_user_by_id_handler(
     """
     try:
         return await get_user(session=session, user_id=id)
-    except BackendExeption as e:
+    except BackendExeption as error:
         response.status_code = 404
-        return e
+        return error
 
 
 @router.post(
