@@ -137,7 +137,7 @@ async def get_user_me(session: AsyncSession, api_key: str):
 
 async def get_user(session: AsyncSession, user_id: int):
     """
-    Метод создания нового пользователя
+    Метод получения пользователя
     :param session: асинхронная сессия SQLAlchemy.
     :param user_id: ID пользователя.
     :return: Словарь с результатом и объектом пользователя.
@@ -152,7 +152,7 @@ async def get_user(session: AsyncSession, user_id: int):
     user = query_result.scalars().one_or_none()
     if not user:
         raise BackendExeption(
-            error_type="NO USER", error_message="Нет пользовател с таким id"
+            error_type="NO USER", error_message="Нет пользователя с таким id"
         )
 
     return {"result": True, "user": user}

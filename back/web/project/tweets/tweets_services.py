@@ -20,14 +20,14 @@ async def get_tweet(session: AsyncSession, tweet_id: int):
     :param tweet_id: int - идентификатор твита
     :return: Tweet объект
     """
-    q = await session.execute(
+    query_result = await session.execute(
         select(Tweet)
         .options(selectinload(Tweet.author))
         .options(selectinload(Tweet.likes).options(selectinload(Like.user)))
         .options(selectinload(Tweet.media))
         .where(Tweet.id == tweet_id)
     )
-    tweet = q.scalars().one_or_none()
+    tweet = query_result.scalars().one_or_none()
     if not tweet:
         raise BackendExeption(
             error_type="NO TWEET", error_message="Не найдены твиты с таким id"
@@ -45,14 +45,14 @@ async def get_tweets(session: AsyncSession, api_key: str):
     """
     await get_user_by_api_key(session=session, api_key=api_key)
 
-    q = await session.execute(
+    query_result = await session.execute(
         select(Tweet)
         .options(selectinload(Tweet.author))
         .options(selectinload(Tweet.likes).options(selectinload(Like.user)))
         .options(selectinload(Tweet.media))
         .where(Tweet.author.has(User.api_key == api_key))
     )
-    tweets = q.scalars().all()
+    tweets = query_result.scalars().all()
     return {"result": True, "tweets": tweets}
 
 
@@ -104,8 +104,8 @@ async def delete_tweet(session: AsyncSession, api_key: str, tweet_id: int):
     user = await get_user_by_api_key(session=session, api_key=api_key)
     await get_tweet(session=session, tweet_id=tweet_id)
 
-    q1 = await session.execute(select(Tweet.user_id).where(Tweet.id == tweet_id))
-    author_id = q1.scalars().one_or_none()
+    query_result = await session.execute(select(Tweet.user_id).where(Tweet.id == tweet_id))
+    author_id = query_result.scalars().one_or_none()
     if author_id != user.id:
         raise BackendExeption(
             error_type="NO ACCSESS",
@@ -155,10 +155,10 @@ async def delete_like(session: AsyncSession, api_key: str, tweet_id: int):
     """
     user = await get_user_by_api_key(session=session, api_key=api_key)
     tweet = await get_tweet(session=session, tweet_id=tweet_id)
-    q = await session.execute(
+    query_result = await session.execute(
         select(Like).where(Like.user_id == user.id).where(Like.tweet_id == tweet.id)
     )
-    like = q.scalars().one_or_none()
+    like = query_result.scalars().one_or_none()
     if not like:
         raise BackendExeption(
             error_type="BAD LIKE DELETE",
