@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 class BaseUser(BaseModel):
     """
-    Базовая схема пользователя.
+    Схема базовая пользователя.
 
     :param api_key: API-ключ пользователя.
     :param name: Имя пользователя.
@@ -45,7 +45,7 @@ class UserOut(BaseUser):
 
 class AuthorBaseSchema(BaseModel):
     """
-    Базовая схема автора -  отображение в списках.
+    Схема базовая для автора.
 
     :param id: Идентификатор пользователя.
     :param name: Имя пользователя.
@@ -75,7 +75,7 @@ class AuthorLikeSchema(BaseModel):
 
 class UserOutSchema(BaseModel):
     """
-    Схема пользователя для фронтенда с подписчиками и подписками.
+    Схема пользователя для с подписчиками и подписками.
 
     :param id: Идентификатор пользователя.
     :param name: Имя пользователя.

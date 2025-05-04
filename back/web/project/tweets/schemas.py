@@ -29,7 +29,7 @@ class TweetIn(BaseModel):
 
 class BaseAnsTweet(BaseModel):
     """
-    Базовый ответ при публикации твита.
+    Схема базового ответа при публикации твита.
 
     :param None
     :return: bool, tweet_id
