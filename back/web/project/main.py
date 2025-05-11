@@ -5,10 +5,10 @@ from fastapi import APIRouter, FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from project.logging_config import setup_custom_logger
-from project.tweets.routes import router as tweets_router
-from project.users.routes import router as users_router
-from project.users.schemas import UserResultOutSchema
+from  project.logging_config import setup_custom_logger
+from  project.tweets.routes import router as tweets_router
+from  project.users.routes import router as users_router
+from  project.users.schemas import UserResultOutSchema
 
 logger = setup_custom_logger(__name__)
 

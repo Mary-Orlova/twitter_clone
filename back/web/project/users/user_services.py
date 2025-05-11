@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from .schemas import UserResultOutSchema
 from ..database import User, followers
 from ..exeptions import BackendExeption
 
@@ -121,18 +122,30 @@ async def get_user_me(session: AsyncSession, api_key: str):
     :param api_key: API-ключ текущего пользователя.
     :return: Словарь с результатом и объектом пользователя.
     """
-    user = await get_user_by_api_key(session=session, api_key=api_key)
-
+    # user = await get_user_by_api_key(session=session, api_key=api_key)
+    #
+    # query_result = await session.execute(
+    #     select(User)
+    #     .options(selectinload(User.following))
+    #     .options(selectinload(User.followers))
+    #     .where(User.api_key == api_key)
+    # )
+    #
+    # user = query_result.scalars().one_or_none()
+    #
+    # return {"result": True, "user": user}
     query_result = await session.execute(
         select(User)
         .options(selectinload(User.following))
         .options(selectinload(User.followers))
         .where(User.api_key == api_key)
     )
-
     user = query_result.scalars().one_or_none()
+    if not user:
+        raise BackendExeption(error_type="NO USER", error_message="Пользователь не найден")
 
-    return {"result": True, "user": user}
+    # Возвращаем Pydantic-модель, которая сериализует ORM-объект
+    return UserResultOutSchema(result=True, user=user)
 
 
 async def get_user(session: AsyncSession, user_id: int):

@@ -4,20 +4,22 @@
 
 from typing import Union
 
-from fastapi import APIRouter, Depends, Header, Response
+from fastapi import APIRouter, Depends, Header, Response, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import RedirectResponse
 
-from project.database import get_session
+from ..database import get_session
 
 from ..exeptions import BackendExeption
 from ..schemas_overal import ErrorSchema, OnlyResult
-from ..users.schemas import UserIn, UserOut, UserResultOutSchema
+from ..users.schemas import UserIn, UserOut, UserResultOutSchema, BaseUser
+from fastapi.responses import HTMLResponse
 from ..users.user_services import (
     delete_follow_to_user,
     get_user,
     get_user_me,
     post_follow_to_user,
-    post_user,
+    post_user, get_user_by_api_key,
 )
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -154,3 +156,27 @@ async def post_users_handler(
     """
 
     return await post_user(session=session, user=user)
+
+# @router.post("/login")
+# async def login(api_key: str, session: AsyncSession = Depends(get_session)):
+#     try:
+#         user = await get_user_by_api_key(session, api_key)
+#         response = RedirectResponse(url="/api", status_code=303)
+#         response.set_cookie("api_key", api_key)  # Сохраняем ключ в куки
+#         return response
+#     except BackendExeption:
+#         return RedirectResponse(url="/login?error=invalid_key", status_code=303)
+
+
+# @router.get("/login", response_class=HTMLResponse)
+# async def login_form():
+#     return """
+#     <html>
+#         <body>
+#             <form action="/login" method="post">
+#                 <input name="api_key" type="text" placeholder="API Key"/>
+#                 <button type="submit">Login</button>
+#             </form>
+#         </body>
+#     </html>
+#     """
