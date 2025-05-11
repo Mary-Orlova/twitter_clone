@@ -7,7 +7,7 @@ from typing import Union
 from fastapi import APIRouter, Depends, Header, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from back.web.project.database import get_session
+from project.database import get_session
 
 from ..exeptions import BackendExeption
 from ..schemas_overal import ErrorSchema, OnlyResult

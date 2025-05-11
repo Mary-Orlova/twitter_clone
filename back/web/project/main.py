@@ -5,10 +5,10 @@ from fastapi import APIRouter, FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from back.web.project.logging_config import setup_custom_logger
-from back.web.project.tweets.routes import router as tweets_router
-from back.web.project.users.routes import router as users_router
-from back.web.project.users.schemas import UserResultOutSchema
+from project.logging_config import setup_custom_logger
+from project.tweets.routes import router as tweets_router
+from project.users.routes import router as users_router
+from project.users.schemas import UserResultOutSchema
 
 logger = setup_custom_logger(__name__)
 
@@ -27,9 +27,9 @@ logger.info(
 )
 
 # Монтируем статику
-app.mount("/static", StaticFiles(directory=str(static_path), html=True), name="static")
-app.mount("/css", StaticFiles(directory=str(static_path) + "/css"), name="css")
-app.mount("/js", StaticFiles(directory=str(static_path) + "/js"), name="js")
+# app.mount("/static", StaticFiles(directory=str(static_path), html=True), name="static")
+# app.mount("/css", StaticFiles(directory=str(static_path) + "/css"), name="css")
+# app.mount("/js", StaticFiles(directory=str(static_path) + "/js"), name="js")
 
 api_router = APIRouter()
 
