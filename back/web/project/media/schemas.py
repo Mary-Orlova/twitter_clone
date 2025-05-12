@@ -2,7 +2,7 @@
 Pydantic-схема для валидации и передачи данных между сервисами Media - изображения.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class MediaOutSchema(BaseModel):
@@ -16,5 +16,4 @@ class MediaOutSchema(BaseModel):
     result: bool = True
     media_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

@@ -5,7 +5,7 @@ Pydantic-схемы для валидации данных и обмена да�
 
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class BaseUser(BaseModel):
@@ -39,8 +39,7 @@ class UserOut(BaseUser):
 
     id: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AuthorBaseSchema(BaseModel):
@@ -54,8 +53,7 @@ class AuthorBaseSchema(BaseModel):
     id: int
     name: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AuthorLikeSchema(BaseModel):
@@ -69,8 +67,7 @@ class AuthorLikeSchema(BaseModel):
     user_id: int
     name: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserOutSchema(BaseModel):
@@ -88,8 +85,7 @@ class UserOutSchema(BaseModel):
     followers: Optional[List[AuthorBaseSchema]]
     following: Optional[List[AuthorBaseSchema]]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserResultOutSchema(BaseModel):
@@ -103,5 +99,4 @@ class UserResultOutSchema(BaseModel):
     result: bool = True
     user: UserOutSchema
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

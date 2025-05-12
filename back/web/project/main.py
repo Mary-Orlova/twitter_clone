@@ -1,15 +1,13 @@
 from pathlib import Path
 
 import uvicorn
-from fastapi import APIRouter, Depends, FastAPI, Request
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import FileResponse
-from project.database import User, async_session
 from project.exeptions import BackendExeption
 from project.logging_config import setup_custom_logger
+from project.media.routes import router as media_router
 from project.tweets.routes import router as tweets_router
 from project.users.routes import router as users_router
-from project.users.schemas import UserOutSchema, UserResultOutSchema
-from project.users.user_services import get_user_by_api_key
 from starlette.responses import JSONResponse
 
 logger = setup_custom_logger(__name__)
@@ -54,18 +52,6 @@ async def root():
 
 
 @api_router.get(
-    "/users/me",
-    summary="Предоставляет информацию о текущем пользователе",
-    response_description="Возвращает id, name, followers, following",
-    response_model=UserResultOutSchema,
-)
-async def about_me(current_user: User = Depends(get_user_by_api_key)):
-    # Преобразуем ORM-модель User в Pydantic-схему UserOutSchema
-    user_schema = UserOutSchema.from_orm(current_user)
-    return UserResultOutSchema(result=True, user=user_schema)
-
-
-@api_router.get(
     "/test", summary="Тест api/test", response_description="Возвращает id и name"
 )
 async def test1():
@@ -88,6 +74,9 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal Server Error"},
     )
 
+
+# Подключение роутера медиа к основному роутеру
+api_router.include_router(media_router)
 
 # Подключение роутера пользователей к основному роутеру
 api_router.include_router(users_router)

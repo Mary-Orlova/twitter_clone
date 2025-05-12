@@ -57,20 +57,24 @@ class User(Base):
     api_key = Column(String, index=True, unique=True)
     password = Column(String, index=True)
 
+    # Пользователи, на которых подписан этот пользователь (подписки)
     following = relationship(
         "User",
         secondary=followers,
-        primaryjoin=(followers.columns.following_user_id == id),
-        secondaryjoin=(followers.columns.followed_user_id == id),
+        primaryjoin=id == followers.c.following_user_id,
+        secondaryjoin=id == followers.c.followed_user_id,
         back_populates="followers",
+        lazy="selectin",
     )
 
+    # Пользователи, которые подписаны на этого пользователя (подписчики)
     followers = relationship(
         "User",
         secondary=followers,
-        primaryjoin=(followers.columns.followed_user_id == id),
-        secondaryjoin=(followers.columns.following_user_id == id),
+        primaryjoin=id == followers.c.followed_user_id,
+        secondaryjoin=id == followers.c.following_user_id,
         back_populates="following",
+        lazy="selectin",
     )
 
     tweets = relationship(

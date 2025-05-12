@@ -1,3 +1,4 @@
+aiofiles
 alembic==1.15.2
 black==25.1.0
 docker==7.1.0
@@ -9,6 +10,7 @@ asyncpg==0.30.0
 pydantic==2.11.4
 pytest==8.3.5
 pytest-asyncio==0.26.0
+python-multipart
 requests==2.32.3
 SQLAlchemy==2.0.40
 uvicorn==0.34.2

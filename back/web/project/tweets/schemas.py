@@ -4,7 +4,7 @@ Pydantic-схемы для валидации и обмена данными м�
 
 from typing import List, Optional, Sequence
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, validator
 from sqlalchemy.ext.associationproxy import _AssociationList
 
 from ..users.schemas import AuthorBaseSchema, AuthorLikeSchema
@@ -23,8 +23,7 @@ class TweetIn(BaseModel):
         default=None, description="Список идентификаторов картинок"
     )
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BaseAnsTweet(BaseModel):
@@ -69,8 +68,7 @@ class TweetSchema(BaseModel):
             return list(v)
         raise ValueError("Вложения должны иметь допустимую последовательность.")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TweetListOutSchema(BaseModel):

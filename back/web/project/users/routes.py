@@ -5,18 +5,16 @@
 from typing import Union
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
-from fastapi.responses import HTMLResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.responses import RedirectResponse
 
 from ..database import User, get_session
 from ..exeptions import BackendExeption
+from ..logging_config import setup_custom_logger
 from ..schemas_overal import ErrorSchema, OnlyResult
 from ..users.schemas import (
-    BaseUser,
     UserIn,
     UserOut,
-    UserOutSchema,
     UserResultOutSchema,
 )
 from ..users.user_services import (
@@ -28,6 +26,7 @@ from ..users.user_services import (
     post_user,
 )
 
+logger = setup_custom_logger(__name__)
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
@@ -88,6 +87,17 @@ async def delete_follow_to_user_handler(
     return {"result": True}
 
 
+@router.get("/check-user/")
+async def check_user(session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(User).where(User.api_key == "test"))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(
+            status_code=404, detail="User with api_key='test' not found"
+        )
+    return {"id": user.id, "name": user.name, "api_key": user.api_key}
+
+
 @router.get(
     "/me",
     summary="Получение информации о себе",
@@ -102,7 +112,7 @@ async def get_user_me_handler(
     """
     Метод получения информации о текущем пользователе по api_key.
     """
-    return await get_user_me(session=session, api_key=current_user.api_key)
+    return await get_user_me(session, current_user.api_key)
 
 
 @router.get(

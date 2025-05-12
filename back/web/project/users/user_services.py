@@ -15,7 +15,7 @@ from ..database import User, followers, get_session
 from ..exeptions import BackendExeption
 from .schemas import UserOutSchema, UserResultOutSchema
 
-api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
+api_key_header = APIKeyHeader(name="api-key", auto_error=True)
 
 
 async def get_user_by_api_key(
@@ -129,20 +129,16 @@ async def get_user_me(session: AsyncSession, api_key: str) -> UserResultOutSchem
     :param api_key: API-ключ текущего пользователя.
     :return: Словарь с результатом и объектом пользователя.
     """
-
-    query_result = await session.execute(
+    result = await session.execute(
         select(User)
-        .options(selectinload(User.following))
         .options(selectinload(User.followers))
+        .options(selectinload(User.following))
         .where(User.api_key == api_key)
     )
-    user = query_result.scalars().one_or_none()
+    user = result.scalars().one_or_none()
     if not user:
-        raise BackendExeption(
-            error_type="NO USER", error_message="Пользователь не найден"
-        )
+        raise HTTPException(status_code=404, detail="User not found")
 
-    # Возвращаем Pydantic-модель, которая сериализует ORM-объект
     user_schema = UserOutSchema.from_orm(user)
     return UserResultOutSchema(result=True, user=user_schema)
 
