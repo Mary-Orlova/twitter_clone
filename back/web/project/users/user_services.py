@@ -14,7 +14,6 @@ from sqlalchemy.orm import selectinload
 from ..database import User, followers, get_session
 from ..exeptions import BackendExeption
 from .schemas import UserOutSchema, UserResultOutSchema
-from ..main import logger
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
 
@@ -32,7 +31,6 @@ async def get_user_by_api_key(
     """
 
     # Запрос к БД для поиска пользователя по api_key
-    logger.info('переданый api_key')
     result = await session.execute(select(User).where(User.api_key == api_key))
 
     user = result.scalars().first()
