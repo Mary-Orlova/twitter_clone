@@ -4,17 +4,25 @@
                     создание, получение, оформление и удаление подписки, получение информации о себе.
 """
 
+from fastapi import Depends, HTTPException, Security, status
+from fastapi.security import APIKeyHeader
 from sqlalchemy import delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from .schemas import UserResultOutSchema
-from ..database import User, followers
+from ..database import User, followers, get_session
 from ..exeptions import BackendExeption
+from .schemas import UserOutSchema, UserResultOutSchema
+from ..main import logger
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
 
 
-async def get_user_by_api_key(session: AsyncSession, api_key: str) -> User:
+async def get_user_by_api_key(
+    api_key: str = Security(api_key_header),
+    session: AsyncSession = Depends(get_session),
+) -> User:
     """
     Метод получения пользователя по API-ключу.
 
@@ -24,15 +32,16 @@ async def get_user_by_api_key(session: AsyncSession, api_key: str) -> User:
     """
 
     # Запрос к БД для поиска пользователя по api_key
+    logger.info('переданый api_key')
     result = await session.execute(select(User).where(User.api_key == api_key))
-    user = result.scalars().one_or_none()
+
+    user = result.scalars().first()
 
     # Если пользователь не найден - выбрасываем исключение
     if not user:
-        raise BackendExeption(
-            error_type="NO USER", error_message="Нет пользователя с таким api-key"
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API Key"
         )
-
     return user
 
 
@@ -114,7 +123,7 @@ async def delete_follow_to_user(session: AsyncSession, api_key: str, user_id: in
     await session.commit()
 
 
-async def get_user_me(session: AsyncSession, api_key: str):
+async def get_user_me(session: AsyncSession, api_key: str) -> UserResultOutSchema:
     # Получить информацию о себе (по api_key)
     """
     Метод получения информации о себе
@@ -122,18 +131,7 @@ async def get_user_me(session: AsyncSession, api_key: str):
     :param api_key: API-ключ текущего пользователя.
     :return: Словарь с результатом и объектом пользователя.
     """
-    # user = await get_user_by_api_key(session=session, api_key=api_key)
-    #
-    # query_result = await session.execute(
-    #     select(User)
-    #     .options(selectinload(User.following))
-    #     .options(selectinload(User.followers))
-    #     .where(User.api_key == api_key)
-    # )
-    #
-    # user = query_result.scalars().one_or_none()
-    #
-    # return {"result": True, "user": user}
+
     query_result = await session.execute(
         select(User)
         .options(selectinload(User.following))
@@ -142,10 +140,13 @@ async def get_user_me(session: AsyncSession, api_key: str):
     )
     user = query_result.scalars().one_or_none()
     if not user:
-        raise BackendExeption(error_type="NO USER", error_message="Пользователь не найден")
+        raise BackendExeption(
+            error_type="NO USER", error_message="Пользователь не найден"
+        )
 
     # Возвращаем Pydantic-модель, которая сериализует ORM-объект
-    return UserResultOutSchema(result=True, user=user)
+    user_schema = UserOutSchema.from_orm(user)
+    return UserResultOutSchema(result=True, user=user_schema)
 
 
 async def get_user(session: AsyncSession, user_id: int):

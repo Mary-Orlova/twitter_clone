@@ -15,7 +15,7 @@ class ErrorSchema(BaseModel):
     error_message: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class OnlyResult(BaseModel):

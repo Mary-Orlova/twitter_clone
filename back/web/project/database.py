@@ -22,7 +22,7 @@ engine = create_async_engine(DATABASE_URL, echo=True)
 
 async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
-session = async_session()
+# session = async_session()
 Base = declarative_base()
 
 
@@ -62,7 +62,15 @@ class User(Base):
         secondary=followers,
         primaryjoin=(followers.columns.following_user_id == id),
         secondaryjoin=(followers.columns.followed_user_id == id),
-        backref="followers",
+        back_populates="followers",
+    )
+
+    followers = relationship(
+        "User",
+        secondary=followers,
+        primaryjoin=(followers.columns.followed_user_id == id),
+        secondaryjoin=(followers.columns.following_user_id == id),
+        back_populates="following",
     )
 
     tweets = relationship(

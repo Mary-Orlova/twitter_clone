@@ -1,11 +1,12 @@
 import asyncio
-from database import async_session
-from database import User, followers
-from sqlalchemy.future import select
-from sqlalchemy import insert
+
+from database import User, async_session, followers
 from logging_config import setup_custom_logger
+from sqlalchemy import insert
+from sqlalchemy.future import select
 
 logger = setup_custom_logger(__name__)
+
 
 async def init_data():
     async with async_session() as session:
@@ -13,12 +14,18 @@ async def init_data():
         result = await session.execute(select(User).filter_by(api_key="test"))
         test_user = result.scalars().first()
         if test_user:
-            logger.info("Тестовый пользователь уже существует, пропускаем инициализацию.")
+            logger.info(
+                "Тестовый пользователь уже существует, пропускаем инициализацию."
+            )
             return
 
         # Создаём пользователей
         users_data = [
-            {"name": "Тестовый пользователь", "api_key": "test", "password": "testpass"},
+            {
+                "name": "Тестовый пользователь",
+                "api_key": "test",
+                "password": "testpass",
+            },
             {"name": "Александр", "api_key": "xsan", "password": "passalex"},
             {"name": "Алексей", "api_key": "lexy", "password": "passalexey"},
             {"name": "Евгений", "api_key": "gaw", "password": "passevg"},
@@ -43,8 +50,7 @@ async def init_data():
 
         # Добавляем связи followers
         followers_data = [
-            {"following_user_id": test_user.id,
-             "followed_user_id": friend.id}
+            {"following_user_id": test_user.id, "followed_user_id": friend.id}
             for friend in friends
         ]
 
@@ -52,6 +58,7 @@ async def init_data():
         await session.commit()
 
         logger.info("Тестовые данные успешно добавлены.")
+
 
 if __name__ == "__main__":
     asyncio.run(init_data())

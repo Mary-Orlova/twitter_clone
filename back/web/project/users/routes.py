@@ -4,22 +4,28 @@
 
 from typing import Union
 
-from fastapi import APIRouter, Depends, Header, Response, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
+from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import RedirectResponse
 
-from ..database import get_session
-
+from ..database import User, get_session
 from ..exeptions import BackendExeption
 from ..schemas_overal import ErrorSchema, OnlyResult
-from ..users.schemas import UserIn, UserOut, UserResultOutSchema, BaseUser
-from fastapi.responses import HTMLResponse
+from ..users.schemas import (
+    BaseUser,
+    UserIn,
+    UserOut,
+    UserOutSchema,
+    UserResultOutSchema,
+)
 from ..users.user_services import (
     delete_follow_to_user,
     get_user,
+    get_user_by_api_key,
     get_user_me,
     post_follow_to_user,
-    post_user, get_user_by_api_key,
+    post_user,
 )
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -78,12 +84,8 @@ async def delete_follow_to_user_handler(
     :param session: Асинхронная сессия SQLAlchemy.
     :return: Результат операции или ошибка.
     """
-    try:
-        await delete_follow_to_user(session=session, api_key=api_key, user_id=id)
-        return {"result": True}
-    except BackendExeption as error:
-        response.status_code = 404
-        return error
+    await delete_follow_to_user(session=session, api_key=api_key, user_id=id)
+    return {"result": True}
 
 
 @router.get(
@@ -94,23 +96,13 @@ async def delete_follow_to_user_handler(
     status_code=200,
 )
 async def get_user_me_handler(
-    response: Response,
-    api_key: str = Header(),
+    current_user: User = Depends(get_user_by_api_key),
     session: AsyncSession = Depends(get_session),
 ) -> Union[UserResultOutSchema, ErrorSchema]:
     """
     Метод получения информации о текущем пользователе по api_key.
-
-    :param response: Объект ответа FastAPI.
-    :param api_key: API-ключ пользователя.
-    :param session: Асинхронная сессия SQLAlchemy.
-    :return: Данные пользователя или ошибка.
     """
-    try:
-        return await get_user_me(session=session, api_key=api_key)
-    except BackendExeption as error:
-        response.status_code = 404
-        return error
+    return await get_user_me(session=session, api_key=current_user.api_key)
 
 
 @router.get(
@@ -131,11 +123,7 @@ async def get_user_by_id_handler(
     :param session: Асинхронная сессия SQLAlchemy.
     :return: Данные пользователя или ошибка.
     """
-    try:
-        return await get_user(session=session, user_id=id)
-    except BackendExeption as error:
-        response.status_code = 404
-        return error
+    return await get_user(session=session, user_id=id)
 
 
 @router.post(
@@ -156,27 +144,3 @@ async def post_users_handler(
     """
 
     return await post_user(session=session, user=user)
-
-# @router.post("/login")
-# async def login(api_key: str, session: AsyncSession = Depends(get_session)):
-#     try:
-#         user = await get_user_by_api_key(session, api_key)
-#         response = RedirectResponse(url="/api", status_code=303)
-#         response.set_cookie("api_key", api_key)  # Сохраняем ключ в куки
-#         return response
-#     except BackendExeption:
-#         return RedirectResponse(url="/login?error=invalid_key", status_code=303)
-
-
-# @router.get("/login", response_class=HTMLResponse)
-# async def login_form():
-#     return """
-#     <html>
-#         <body>
-#             <form action="/login" method="post">
-#                 <input name="api_key" type="text" placeholder="API Key"/>
-#                 <button type="submit">Login</button>
-#             </form>
-#         </body>
-#     </html>
-#     """

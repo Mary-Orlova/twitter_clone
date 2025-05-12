@@ -1,13 +1,11 @@
+import asyncio
 import os
 import sys
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
+from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
-import asyncio
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -27,6 +25,7 @@ if config.config_file_name is not None:
 sys.path.append(os.getcwd())
 
 from project.database import Base
+
 fileConfig(config.config_file_name)
 target_metadata = Base.metadata
 
@@ -94,12 +93,11 @@ def run_migrations_online() -> None:
 
 def do_run_migrations(connection):
     context.configure(
-        connection=connection,
-        target_metadata=target_metadata,
-        compare_type=True
+        connection=connection, target_metadata=target_metadata, compare_type=True
     )
     with context.begin_transaction():
         context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()

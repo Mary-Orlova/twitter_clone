@@ -55,7 +55,7 @@ class AuthorBaseSchema(BaseModel):
     name: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class AuthorLikeSchema(BaseModel):
@@ -70,7 +70,7 @@ class AuthorLikeSchema(BaseModel):
     name: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserOutSchema(BaseModel):
@@ -89,7 +89,7 @@ class UserOutSchema(BaseModel):
     following: Optional[List[AuthorBaseSchema]]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserResultOutSchema(BaseModel):
@@ -104,4 +104,4 @@ class UserResultOutSchema(BaseModel):
     user: UserOutSchema
 
     class Config:
-        orm_mode = True
+        from_attributes = True

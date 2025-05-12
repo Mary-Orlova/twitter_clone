@@ -1,14 +1,16 @@
 from pathlib import Path
 
 import uvicorn
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
-
-from  project.logging_config import setup_custom_logger
-from  project.tweets.routes import router as tweets_router
-from  project.users.routes import router as users_router
-from  project.users.schemas import UserResultOutSchema
+from project.database import User, async_session
+from project.exeptions import BackendExeption
+from project.logging_config import setup_custom_logger
+from project.tweets.routes import router as tweets_router
+from project.users.routes import router as users_router
+from project.users.schemas import UserOutSchema, UserResultOutSchema
+from project.users.user_services import get_user_by_api_key
+from starlette.responses import JSONResponse
 
 logger = setup_custom_logger(__name__)
 
@@ -26,7 +28,7 @@ logger.info(
     f"Фактический путь: {static_path.absolute()} | Существует: {static_path.exists()}"
 )
 
-# Монтируем статику
+# Монтируем статику без докера
 # app.mount("/static", StaticFiles(directory=str(static_path), html=True), name="static")
 # app.mount("/css", StaticFiles(directory=str(static_path) + "/css"), name="css")
 # app.mount("/js", StaticFiles(directory=str(static_path) + "/js"), name="js")
@@ -57,16 +59,10 @@ async def root():
     response_description="Возвращает id, name, followers, following",
     response_model=UserResultOutSchema,
 )
-async def about_me():
-    return {
-        "result": "true",
-        "user": {
-            "id": "int",
-            "name": "str",
-            "followers": [{"id": "int", "name": "str"}],
-            "following": [{"id": "int", "name": "str"}],
-        },
-    }
+async def about_me(current_user: User = Depends(get_user_by_api_key)):
+    # Преобразуем ORM-модель User в Pydantic-схему UserOutSchema
+    user_schema = UserOutSchema.from_orm(current_user)
+    return UserResultOutSchema(result=True, user=user_schema)
 
 
 @api_router.get(
@@ -74,6 +70,23 @@ async def about_me():
 )
 async def test1():
     return {"id": 1, "name": "Mary"}
+
+
+@app.exception_handler(BackendExeption)
+async def backend_exception_handler(request: Request, exc: BackendExeption):
+    return JSONResponse(
+        status_code=400,
+        content=exc.to_dict(),
+    )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"},
+    )
 
 
 # Подключение роутера пользователей к основному роутеру
@@ -84,6 +97,7 @@ api_router.include_router(tweets_router)
 
 # Подключаем основной роутер к приложению
 app.include_router(api_router, prefix="/api")
+
 
 if __name__ == "__main__":
     logger.info("Запуск осуществлен")

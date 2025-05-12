@@ -24,7 +24,7 @@ class TweetIn(BaseModel):
     )
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class BaseAnsTweet(BaseModel):
@@ -70,7 +70,7 @@ class TweetSchema(BaseModel):
         raise ValueError("Вложения должны иметь допустимую последовательность.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class TweetListOutSchema(BaseModel):

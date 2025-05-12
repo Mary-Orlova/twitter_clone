@@ -104,7 +104,9 @@ async def delete_tweet(session: AsyncSession, api_key: str, tweet_id: int):
     user = await get_user_by_api_key(session=session, api_key=api_key)
     await get_tweet(session=session, tweet_id=tweet_id)
 
-    query_result = await session.execute(select(Tweet.user_id).where(Tweet.id == tweet_id))
+    query_result = await session.execute(
+        select(Tweet.user_id).where(Tweet.id == tweet_id)
+    )
     author_id = query_result.scalars().one_or_none()
     if author_id != user.id:
         raise BackendExeption(
