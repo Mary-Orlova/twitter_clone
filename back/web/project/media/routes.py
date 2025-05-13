@@ -18,8 +18,10 @@ from ..schemas_overal import ErrorSchema
 router = APIRouter(prefix="/medias", tags=["Medias"])
 
 # Папка для сохранения файлов
-OUT_PATH = (Path(__file__).parent / "media_files").absolute()
-PREFIX_NAME = "/static/media_files/"
+# OUT_PATH = (Path(__file__).parent / "media_files").absolute()
+# PREFIX_NAME = "/static/media_files/"
+OUT_PATH = Path("/usr/src/app/media/media_files")
+PREFIX_NAME = "/media_files/"
 
 
 @router.post(
