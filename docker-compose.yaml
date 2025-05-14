@@ -1,5 +1,3 @@
-version: '3'
-
 networks:
   app-network:
     driver: bridge
@@ -13,6 +11,7 @@ services:
     volumes:
       - ./back/web:/usr/src/app
       - ./back/dist/static:/usr/src/dist/static
+      - ./back/web/media/media_files:/usr/src/app/media/media_files
 #      - ./back/web:/code
     depends_on:
       - db
@@ -25,7 +24,9 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./back/dist/static:/usr/src/dist/static
+#      - ./back/dist/static:/usr/src/dist/static
+      - ./back/dist/static:/usr/share/nginx/html
+      - ./back/web/media/media_files:/usr/src/app/media/media_files
     depends_on:
       - web
     networks:
@@ -37,5 +38,10 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: diplom_project
+    volumes:
+      - pgdata:/var/lib/postgresql/data  # постоянное хранилище данных
     networks:
       - app-network
+
+volumes:
+  pgdata:
