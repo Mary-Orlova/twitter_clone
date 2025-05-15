@@ -4,12 +4,11 @@
 
 from typing import Union
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, Security
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import User, get_session
-from ..exeptions import BackendExeption
 from ..logging_config import setup_custom_logger
 from ..schemas_overal import ErrorSchema, OnlyResult
 from ..users.schemas import (
@@ -18,9 +17,10 @@ from ..users.schemas import (
     UserResultOutSchema,
 )
 from ..users.user_services import (
+    api_key_header,
     delete_follow_to_user,
+    get_current_user,
     get_user,
-    get_user_by_api_key,
     get_user_me,
     post_follow_to_user,
     post_user,
@@ -38,10 +38,10 @@ router = APIRouter(prefix="/users", tags=["Users"])
     status_code=200,
 )
 async def post_follow_to_user_handler(
-    response: Response,
     id: int,
-    api_key: str = Header(default="test"),
+    response: Response,
     session: AsyncSession = Depends(get_session),
+    api_key: str = Security(api_key_header),
 ) -> Union[OnlyResult, ErrorSchema]:
     """
     Метод подписки текущего пользователя на пользователя с заданным id.
@@ -53,12 +53,9 @@ async def post_follow_to_user_handler(
     :return: Результат операции или ошибка.
     """
 
-    try:
-        await post_follow_to_user(session=session, api_key=api_key, user_id=id)
-        return {"result": True}
-    except BackendExeption as error:
-        response.status_code = 404
-        return error
+    current_user = await get_current_user(api_key=api_key, session=session)
+    await post_follow_to_user(session=session, follower_id=current_user.id, user_id=id)
+    return {"result": True}
 
 
 @router.delete(
@@ -71,7 +68,7 @@ async def post_follow_to_user_handler(
 async def delete_follow_to_user_handler(
     response: Response,
     id: int,
-    api_key: str = Header(default="test"),
+    api_key: str = Security(api_key_header),
     session: AsyncSession = Depends(get_session),
 ) -> Union[OnlyResult, ErrorSchema]:
     """
@@ -83,17 +80,24 @@ async def delete_follow_to_user_handler(
     :param session: Асинхронная сессия SQLAlchemy.
     :return: Результат операции или ошибка.
     """
-    await delete_follow_to_user(session=session, api_key=api_key, user_id=id)
+    current_user = await get_current_user(api_key=api_key, session=session)
+    await delete_follow_to_user(
+        session=session, follower_id=current_user.id, user_id=id
+    )
     return {"result": True}
 
 
 @router.get("/check-user/")
-async def check_user(session: AsyncSession = Depends(get_session)):
-    result = await session.execute(select(User).where(User.api_key == "test"))
+async def check_user(
+    api_key: str = Security(api_key_header),
+    session: AsyncSession = Depends(get_session),
+):
+    logger.info(f"Проверка пользователя api_key: {api_key}")
+    result = await session.execute(select(User).where(User.api_key == api_key))
     user = result.scalars().first()
     if not user:
         raise HTTPException(
-            status_code=404, detail="User with api_key='test' not found"
+            status_code=404, detail="Пользователь с таким api-key не найден"
         )
     return {"id": user.id, "name": user.name, "api_key": user.api_key}
 
@@ -106,7 +110,7 @@ async def check_user(session: AsyncSession = Depends(get_session)):
     status_code=200,
 )
 async def get_user_me_handler(
-    current_user: User = Depends(get_user_by_api_key),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> Union[UserResultOutSchema, ErrorSchema]:
     """

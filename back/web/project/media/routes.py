@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Union
 
 import aiofiles
-from fastapi import APIRouter, Depends, Header, Response, UploadFile
+from fastapi import APIRouter, Depends, Response, Security, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_session
@@ -14,13 +14,14 @@ from ..exeptions import BackendExeption
 from ..media.media_services import check_file, post_image
 from ..media.schemas import MediaOutSchema
 from ..schemas_overal import ErrorSchema
+from ..users.user_services import api_key_header
 
 router = APIRouter(prefix="/medias", tags=["Medias"])
 
 # Папка для сохранения файлов
 # OUT_PATH = (Path(__file__).parent / "media_files").absolute()
 # PREFIX_NAME = "/static/media_files/"
-OUT_PATH = Path("/usr/src/app/media/media_files") # Абсолютный путь внутри контейнера
+OUT_PATH = Path("/usr/src/app/media/media_files")  # Абсолютный путь внутри контейнера
 PREFIX_NAME = "/media_files/"
 
 
@@ -34,7 +35,7 @@ PREFIX_NAME = "/media_files/"
 async def post_image_handler(
     response: Response,
     file: UploadFile,
-    api_key: str = Header(),
+    api_key: str = Security(api_key_header),
     session: AsyncSession = Depends(get_session),
 ) -> Union[MediaOutSchema, ErrorSchema]:
     """

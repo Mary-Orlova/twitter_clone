@@ -77,7 +77,7 @@ class UserOutSchema(BaseModel):
     :param id: Идентификатор пользователя.
     :param name: Имя пользователя.
     :param followers: Список подписчиков.
-    :param following: Список пользователей, за которыми следит пользователь.
+    :param following: Список пользователей, на которых подписан пользователь.
     """
 
     id: int

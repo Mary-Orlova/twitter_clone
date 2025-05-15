@@ -6,11 +6,19 @@ class BackendExeption(Exception):
     :param error_message: Описание ошибки для пользователя
     """
 
-    def __init__(self, error_type: str, error_message: str, *args, **kwargs):
+    def __init__(
+        self,
+        error_type: str,
+        error_message: str,
+        status_code: int = 404,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args)
         self.result = False
         self.error_type = error_type
         self.error_message = error_message
+        self.status_code = status_code
 
     def __repr__(self) -> str:
         """

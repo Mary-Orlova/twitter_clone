@@ -13,22 +13,28 @@ from sqlalchemy.orm import selectinload
 
 from ..database import User, followers, get_session
 from ..exeptions import BackendExeption
+from ..logging_config import setup_custom_logger
 from .schemas import UserOutSchema, UserResultOutSchema
+
+logger = setup_custom_logger(__name__)
 
 api_key_header = APIKeyHeader(name="api-key", auto_error=True)
 
 
-async def get_user_by_api_key(
+async def get_current_user(
     api_key: str = Security(api_key_header),
     session: AsyncSession = Depends(get_session),
 ) -> User:
     """
     Метод получения пользователя по API-ключу.
+    Зависимость аутентификации.
 
     :param session: Асинхронная сессия SQLAlchemy.
     :param api_key: API-ключ пользователя.
     :return: Объект пользователя (User).
     """
+
+    logger.info(f"Метод get_current_user API key: {api_key}")
 
     # Запрос к БД для поиска пользователя по api_key
     result = await session.execute(select(User).where(User.api_key == api_key))
@@ -38,31 +44,26 @@ async def get_user_by_api_key(
     # Если пользователь не найден - выбрасываем исключение
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API Key"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Не валидный API Key"
         )
     return user
 
 
-async def post_follow_to_user(session: AsyncSession, api_key: str, user_id: int):
+async def post_follow_to_user(session: AsyncSession, follower_id: int, user_id: int):
     """
     Метод оформления подписки на пользователя
     :param session: асинхронная сессия SQLAlchemy.
-    :param api_key: API-ключ пользователя, который подписывается.
+    :param follower_id: id пользователя, который подписывается.
     :param user_id: id пользователя, на которого подписываются.
     :return: None
     """
-
-    # Получение пользователя по api_key
-    following_user = await get_user_by_api_key(session=session, api_key=api_key)
-
-    # Запрет подписки на самого себя
-    if following_user.id == user_id:
+    if follower_id == user_id:
         raise BackendExeption(
             error_type="BAD FOLLOW",
             error_message="Пользователь не может подписаться на самого себя",
+            status_code=400,
         )
 
-    # Проверка существует ли пользователь, на которого планируется подписка
     query_result = await session.execute(select(User).where(User.id == user_id))
     user_followed = query_result.scalars().one_or_none()
     if not user_followed:
@@ -71,37 +72,34 @@ async def post_follow_to_user(session: AsyncSession, api_key: str, user_id: int)
             error_message="Нет пользователя с user_id для подписки",
         )
     try:
-        # Запись о подписке
         await session.execute(
             insert(followers).values(
-                following_user_id=following_user.id,
+                following_user_id=follower_id,
                 followed_user_id=user_id,
             )
         )
     except IntegrityError:
-        # Исключение - подписка уже существует
         raise BackendExeption(
-            error_type="BAD FOLLOW", error_message="Такая подписка уже существует"
+            error_type="BAD FOLLOW",
+            error_message="Такая подписка уже существует",
+            status_code=400,
         )
     await session.commit()
 
 
-async def delete_follow_to_user(session: AsyncSession, api_key: str, user_id: int):
+async def delete_follow_to_user(session: AsyncSession, follower_id: int, user_id: int):
     """
     Метод отмены подписки на пользователя
     :param session: асинхронная сессия SQLAlchemy.
-    :param api_key: API-ключ пользователя, который отписывается.
-    :param user_id: id пользователя, от которого отписываются.
+    :param follower_id: ID пользователя, который отписывается.
+    :param user_id: ID пользователя, от которого отписываются.
     :return: None
     """
-
-    # Получение пользователя по api_key, который хочет отписаться
-    following_user = await get_user_by_api_key(session=session, api_key=api_key)
 
     # Проверка существует ли такая подписка
     query_result = await session.execute(
         select(followers).where(
-            followers.columns.following_user_id == following_user.id,
+            followers.columns.following_user_id == follower_id,
             followers.columns.followed_user_id == user_id,
         )
     )
@@ -114,7 +112,7 @@ async def delete_follow_to_user(session: AsyncSession, api_key: str, user_id: in
     # Удаление записи о подписке
     await session.execute(
         delete(followers).where(
-            followers.columns.following_user_id == following_user.id,
+            followers.columns.following_user_id == follower_id,
             followers.columns.followed_user_id == user_id,
         )
     )
@@ -122,33 +120,33 @@ async def delete_follow_to_user(session: AsyncSession, api_key: str, user_id: in
 
 
 async def get_user_me(session: AsyncSession, api_key: str) -> UserResultOutSchema:
-    # Получить информацию о себе (по api_key)
     """
-    Метод получения информации о себе
+    Метод получения информации о текущем пользователе по api-key
     :param session: асинхронная сессия SQLAlchemy.
     :param api_key: API-ключ текущего пользователя.
-    :return: Словарь с результатом и объектом пользователя.
+    :return: Объект пользователя
     """
-    result = await session.execute(
+    query_result = await session.execute(
         select(User)
         .options(selectinload(User.followers))
         .options(selectinload(User.following))
         .where(User.api_key == api_key)
     )
-    user = result.scalars().one_or_none()
+    user = query_result.scalars().one_or_none()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
 
+    # Преобразование ORM-модель в Pydantic-схему с вложенными подписчиками и подписками
     user_schema = UserOutSchema.from_orm(user)
     return UserResultOutSchema(result=True, user=user_schema)
 
 
 async def get_user(session: AsyncSession, user_id: int):
     """
-    Метод получения пользователя
+    Метод получения пользователя по id
     :param session: асинхронная сессия SQLAlchemy.
     :param user_id: ID пользователя.
-    :return: Словарь с результатом и объектом пользователя.
+    :return: Объект пользователя.
     """
     query_result = await session.execute(
         select(User)
@@ -162,15 +160,15 @@ async def get_user(session: AsyncSession, user_id: int):
         raise BackendExeption(
             error_type="NO USER", error_message="Нет пользователя с таким id"
         )
-
-    return {"result": True, "user": user}
+    user_schema = UserOutSchema.from_orm(user)
+    return UserResultOutSchema(result=True, user=user_schema)
 
 
 async def post_user(session: AsyncSession, user) -> User:
     """
     Метод создания нового пользователя
     :param session: Асинхронная сессия SQLAlchemy.
-    :param user: Объект данных пользователя (обычно pydantic-модель).
+    :param user: Объект данных пользователя (pydantic-модель).
     :return: Созданный объект пользователя.
     """
     new_user = User(**user.dict())

@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from ..database import Like, Media, Tweet, User
 from ..exeptions import BackendExeption
-from ..users.user_services import get_user_by_api_key
+from ..users.user_services import get_current_user
 
 
 async def get_tweet(session: AsyncSession, tweet_id: int):
@@ -43,7 +43,7 @@ async def get_tweets(session: AsyncSession, api_key: str):
     :param api_key: str - API-ключ пользователя
     :return: dict с флагом result и списком твитов
     """
-    await get_user_by_api_key(session=session, api_key=api_key)
+    await get_current_user(api_key=api_key, session=session)
 
     query_result = await session.execute(
         select(Tweet)
@@ -65,7 +65,7 @@ async def post_tweet(session: AsyncSession, api_key: str, tweet_data: str) -> in
     :param tweet_data: str - текст твита
     :return: int - идентификатор нового твита
     """
-    user = await get_user_by_api_key(session=session, api_key=api_key)
+    user = await get_current_user(api_key=api_key, session=session)
 
     insert_tweet_query = await session.execute(
         insert(Tweet).values(
@@ -101,7 +101,7 @@ async def delete_tweet(session: AsyncSession, api_key: str, tweet_id: int):
     :param api_key: str - API-ключ пользователя
     :param tweet_id: int - идентификатор твита
     """
-    user = await get_user_by_api_key(session=session, api_key=api_key)
+    user = await get_current_user(api_key=api_key, session=session)
     await get_tweet(session=session, tweet_id=tweet_id)
 
     query_result = await session.execute(
@@ -110,7 +110,7 @@ async def delete_tweet(session: AsyncSession, api_key: str, tweet_id: int):
     author_id = query_result.scalars().one_or_none()
     if author_id != user.id:
         raise BackendExeption(
-            error_type="NO ACCSESS",
+            error_type="NO ACCESS",
             error_message="Твит принадлежит другому пользователю",
         )
 
@@ -129,7 +129,7 @@ async def post_like(session: AsyncSession, api_key: str, tweet_id: int) -> int:
     :param tweet_id: int - идентификатор твита
     :return: int - идентификатор нового лайка
     """
-    user = await get_user_by_api_key(session=session, api_key=api_key)
+    user = await get_current_user(api_key=api_key, session=session)
     await get_tweet(session=session, tweet_id=tweet_id)
 
     try:
@@ -155,10 +155,9 @@ async def delete_like(session: AsyncSession, api_key: str, tweet_id: int):
     :param api_key: str - API-ключ пользователя
     :param tweet_id: int - идентификатор твита
     """
-    user = await get_user_by_api_key(session=session, api_key=api_key)
-    tweet = await get_tweet(session=session, tweet_id=tweet_id)
+    user = await get_current_user(api_key=api_key, session=session)
     query_result = await session.execute(
-        select(Like).where(Like.user_id == user.id).where(Like.tweet_id == tweet.id)
+        select(Like).where(Like.user_id == user.id).where(Like.tweet_id == tweet_id)
     )
     like = query_result.scalars().one_or_none()
     if not like:

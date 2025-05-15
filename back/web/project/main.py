@@ -61,7 +61,7 @@ async def test1():
 @app.exception_handler(BackendExeption)
 async def backend_exception_handler(request: Request, exc: BackendExeption):
     return JSONResponse(
-        status_code=400,
+        status_code=exc.status_code,
         content=exc.to_dict(),
     )
 

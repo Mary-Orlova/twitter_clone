@@ -4,11 +4,10 @@
 
 from typing import Union
 
-from fastapi import APIRouter, Depends, Header, Response
+from fastapi import APIRouter, Depends, Response, Security
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_session
-from ..exeptions import BackendExeption
 from ..schemas_overal import ErrorSchema, OnlyResult
 from ..tweets.schemas import (
     BaseAnsTweet,
@@ -25,6 +24,7 @@ from ..tweets.tweets_services import (
     post_like,
     post_tweet,
 )
+from ..users.user_services import api_key_header
 
 router = APIRouter(prefix="/tweets", tags=["Tweets"])
 
@@ -46,13 +46,9 @@ async def get_tweet_handler(
     :param  response: Объект ответа FastAPI
     :param id: int - идентификатор твита в БД
     :param  session: асинхронная сессия SQLAlchemy
-    :return: твит.
+    :return: твит или ошибка.
     """
-    try:
-        result = await get_tweet(session=session, tweet_id=id)
-    except BackendExeption as error:
-        response.status_code = 404
-        result = error
+    result = await get_tweet(session=session, tweet_id=id)
     return result
 
 
@@ -65,7 +61,7 @@ async def get_tweet_handler(
 )
 async def get_tweets_handler(
     response: Response,
-    api_key: str = Header(default="test"),
+    api_key: str = Security(api_key_header),
     session: AsyncSession = Depends(get_session),
 ) -> Union[TweetListOutSchema, ErrorSchema]:
     """
@@ -76,11 +72,7 @@ async def get_tweets_handler(
 
     :return: Список твитов.
     """
-    try:
-        result = await get_tweets(session=session, api_key=api_key)
-    except BackendExeption as error:
-        response.status_code = 404
-        result = error
+    result = await get_tweets(api_key=api_key, session=session)
     return result
 
 
@@ -94,7 +86,7 @@ async def get_tweets_handler(
 async def post_tweets_handler(
     response: Response,
     tweet: TweetIn,
-    api_key: str = Header(default="test"),
+    api_key: str = Security(api_key_header),
     session: AsyncSession = Depends(get_session),
 ) -> Union[BaseAnsTweet, ErrorSchema]:
     """
@@ -107,22 +99,18 @@ async def post_tweets_handler(
 
     :return: Результат публикации твита.
     """
-    try:
-        new_tweet_id = await post_tweet(
+    new_tweet_id = await post_tweet(
+        api_key=api_key,
+        session=session,
+        tweet_data=tweet.tweet_data,
+    )
+    if tweet.tweet_media_ids:
+        await insert_media(
             session=session,
-            api_key=api_key,
-            tweet_data=tweet.tweet_data,
+            tweet_id=new_tweet_id,
+            tweet_medias=tweet.tweet_media_ids,
         )
-        if tweet.tweet_media_ids:
-            await insert_media(
-                session=session,
-                tweet_id=new_tweet_id,
-                tweet_medias=tweet.tweet_media_ids,
-            )
-        return {"result": True, "tweet_id": new_tweet_id}
-    except BackendExeption as error:
-        response.status_code = 404
-        return error
+    return {"result": True, "tweet_id": new_tweet_id}
 
 
 @router.delete(
@@ -135,7 +123,7 @@ async def post_tweets_handler(
 async def delete_tweets_handler(
     response: Response,
     id: int,
-    api_key: str = Header(default="test"),
+    api_key: str = Security(api_key_header),
     session: AsyncSession = Depends(get_session),
 ) -> Union[OnlyResult, ErrorSchema]:
     """
@@ -148,12 +136,8 @@ async def delete_tweets_handler(
 
     :return: Результат удаления твита.
     """
-    try:
-        await delete_tweet(session=session, api_key=api_key, tweet_id=id)
-        return {"result": True}
-    except BackendExeption as error:
-        response.status_code = 404
-        return error
+    await delete_tweet(api_key=api_key, session=session, tweet_id=id)
+    return {"result": True}
 
 
 @router.post(
@@ -166,7 +150,7 @@ async def delete_tweets_handler(
 async def post_like_to_tweet_handler(
     response: Response,
     id: int,
-    api_key: str = Header(default="test"),
+    api_key: str = Security(api_key_header),
     session: AsyncSession = Depends(get_session),
 ) -> Union[OnlyResult, ErrorSchema]:
     """
@@ -179,12 +163,8 @@ async def post_like_to_tweet_handler(
 
     :return: Результат операции установки лайка.
     """
-    try:
-        await post_like(session=session, api_key=api_key, tweet_id=id)
-        return {"result": True}
-    except BackendExeption as error:
-        response.status_code = 404
-        return error
+    await post_like(api_key=api_key, session=session, tweet_id=id)
+    return {"result": True}
 
 
 @router.delete(
@@ -197,7 +177,7 @@ async def post_like_to_tweet_handler(
 async def delete_like_to_tweet_handler(
     response: Response,
     id: int,
-    api_key: str = Header(default="test"),
+    api_key: str = Security(api_key_header),
     session: AsyncSession = Depends(get_session),
 ) -> Union[OnlyResult, ErrorSchema]:
     """
@@ -210,9 +190,5 @@ async def delete_like_to_tweet_handler(
 
     :return: Результат удаления лайка с твита.
     """
-    try:
-        await delete_like(session=session, api_key=api_key, tweet_id=id)
-        return {"result": True}
-    except BackendExeption as error:
-        response.status_code = 404
-        return error
+    await delete_like(api_key=api_key, session=session, tweet_id=id)
+    return {"result": True}
