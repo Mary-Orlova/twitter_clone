@@ -1,8 +1,14 @@
+"""
+media_services.py
+
+Модуль media_services - публикация изображений в твите и проверка типа файла.
+"""
+
 from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import Media
-from ..exeptions import BackendExeption
+from ..exceptions import BackendException
 
 
 async def post_image(session: AsyncSession, image_name: str) -> dict:
@@ -27,7 +33,7 @@ def check_file(file) -> None:
     :param file: Загруженный файл.
     """
     if file.content_type not in ("image/jpeg", "image/png"):
-        raise BackendExeption(
+        raise BackendException(
             error_type="BAD FILE",
             error_message="Ошибка! Поддерживаемые типы изображений: jpeg, png.",
         )

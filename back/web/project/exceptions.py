@@ -1,4 +1,11 @@
-class BackendExeption(Exception):
+"""
+exceptions.py
+
+Модуль кастомной обработки исключений.
+"""
+
+
+class BackendException(Exception):
     """
     Кастомное исключение для обработки ошибок в бизнес-логике.
 

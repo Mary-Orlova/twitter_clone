@@ -1,3 +1,11 @@
+"""
+schemas_overal.py
+
+Расширение pydantic-схем (общие):
+- ErrorSchema
+- OnlyResult
+"""
+
 from pydantic import BaseModel, ConfigDict
 
 

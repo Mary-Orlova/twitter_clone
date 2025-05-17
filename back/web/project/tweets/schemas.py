@@ -1,5 +1,7 @@
 """
-Pydantic-схемы для валидации и обмена данными между твитами.
+schemas.py
+
+Модуль Pydantic-схемы валидации и обмена данными между твитами.
 """
 
 from typing import List, Optional, Sequence
@@ -50,7 +52,9 @@ class TweetSchema(BaseModel):
     """
 
     id: int = Field(..., description="Идентификатор твита")
-    content: str = Field(..., example="супер твит", description="Содержание твита")
+    content: str = Field(
+        ..., json_schema_extra={"example": "супер твит"}, description="Содержание твита"
+    )
     attachments: Optional[Sequence[str]] = Field(
         default=None, description="Список вложений"
     )
@@ -60,12 +64,12 @@ class TweetSchema(BaseModel):
     )
 
     @validator("attachments", pre=True)
-    def validate_attachments(cls, v):
+    def validate_attachments(cls, value):
         """
         Валидирует, что attachments - это последовательность.
         """
-        if isinstance(v, _AssociationList) or isinstance(v, (list, tuple, set)):
-            return list(v)
+        if isinstance(value, _AssociationList) or isinstance(value, (list, tuple, set)):
+            return list(value)
         raise ValueError("Вложения должны иметь допустимую последовательность.")
 
     model_config = ConfigDict(from_attributes=True)

@@ -1,3 +1,9 @@
+"""
+init_data.py
+
+Модуль заполнение Базы Данных - таблица users: тестовые пользователи
+"""
+
 import asyncio
 
 from database import User, async_session, followers

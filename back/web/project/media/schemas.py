@@ -1,5 +1,7 @@
 """
-Pydantic-схема для валидации и передачи данных между сервисами Media - изображения.
+schemas.py
+
+Модуль Pydantic-схем валидации и передачи данных между сервисами Media - изображения.
 """
 
 from pydantic import BaseModel, ConfigDict

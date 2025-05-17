@@ -1,9 +1,22 @@
+"""
+main.py
+
+Основной модуль настройки и запуска FastAPI-приложения микросервиса блогинга.
+
+Содержит:
+- Инициализацию FastAPI с базовыми параметрами (название, версия, описание).
+- Подключение и маршрутизацию API роутеров (пользователи, твиты, медиа).
+- Обработчики ошибок (глобальный и кастомный).
+- Монтирование статических файлов.
+- Точку входа для запуска приложения через Uvicorn.
+"""
+
 from pathlib import Path
 
 import uvicorn
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import FileResponse
-from project.exeptions import BackendExeption
+from project.exceptions import BackendException
 from project.logging_config import setup_custom_logger
 from project.media.routes import router as media_router
 from project.tweets.routes import router as tweets_router
@@ -58,8 +71,8 @@ async def test1():
     return {"id": 1, "name": "Mary"}
 
 
-@app.exception_handler(BackendExeption)
-async def backend_exception_handler(request: Request, exc: BackendExeption):
+@app.exception_handler(BackendException)
+async def backend_exception_handler(request: Request, exc: BackendException):
     return JSONResponse(
         status_code=exc.status_code,
         content=exc.to_dict(),

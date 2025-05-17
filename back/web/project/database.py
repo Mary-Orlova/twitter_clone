@@ -1,5 +1,7 @@
 """
-Файл для база данных с настройками, классами-таблицами представлениями:
+database.py
+
+Модуль для база данных с настройками, классами-таблицами представлениями:
  followers, users, tweets, medias, likes.
 """
 
@@ -22,7 +24,6 @@ engine = create_async_engine(DATABASE_URL, echo=True)
 
 async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
-# session = async_session()
 Base = declarative_base()
 
 

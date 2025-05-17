@@ -1,7 +1,10 @@
 """
-Асинхронные сервисные функции для работы с пользователями и подписками (users и followers).
+user_services.py
+
+Модуль Асинхронные сервисные функции работы с пользователями и подписками (users и followers).
 Для пользователя: Метод получения пользователя по API-ключу,
-                    создание, получение, оформление и удаление подписки, получение информации о себе.
+                    создание, получение, оформление и удаление подписки,
+                    получение информации о себе.
 """
 
 from fastapi import Depends, HTTPException, Security, status
@@ -12,9 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..database import User, followers, get_session
-from ..exeptions import BackendExeption
+from ..exceptions import BackendException
 from ..logging_config import setup_custom_logger
-from .schemas import UserOutSchema, UserResultOutSchema
+from .schemas import UserIn, UserOutSchema, UserResultOutSchema
 
 logger = setup_custom_logger(__name__)
 
@@ -58,7 +61,7 @@ async def post_follow_to_user(session: AsyncSession, follower_id: int, user_id: 
     :return: None
     """
     if follower_id == user_id:
-        raise BackendExeption(
+        raise BackendException(
             error_type="BAD FOLLOW",
             error_message="Пользователь не может подписаться на самого себя",
             status_code=400,
@@ -67,7 +70,7 @@ async def post_follow_to_user(session: AsyncSession, follower_id: int, user_id: 
     query_result = await session.execute(select(User).where(User.id == user_id))
     user_followed = query_result.scalars().one_or_none()
     if not user_followed:
-        raise BackendExeption(
+        raise BackendException(
             error_type="NO USER",
             error_message="Нет пользователя с user_id для подписки",
         )
@@ -79,7 +82,7 @@ async def post_follow_to_user(session: AsyncSession, follower_id: int, user_id: 
             )
         )
     except IntegrityError:
-        raise BackendExeption(
+        raise BackendException(
             error_type="BAD FOLLOW",
             error_message="Такая подписка уже существует",
             status_code=400,
@@ -105,7 +108,7 @@ async def delete_follow_to_user(session: AsyncSession, follower_id: int, user_id
     )
     follower = query_result.scalars().one_or_none()
     if not follower:
-        raise BackendExeption(
+        raise BackendException(
             error_type="BAD FOLLOW DELETE", error_message="Нет такого фолловера"
         )
 
@@ -157,21 +160,21 @@ async def get_user(session: AsyncSession, user_id: int):
 
     user = query_result.scalars().one_or_none()
     if not user:
-        raise BackendExeption(
+        raise BackendException(
             error_type="NO USER", error_message="Нет пользователя с таким id"
         )
     user_schema = UserOutSchema.from_orm(user)
     return UserResultOutSchema(result=True, user=user_schema)
 
 
-async def post_user(session: AsyncSession, user) -> User:
+async def post_user(session: AsyncSession, user: UserIn) -> User:
     """
     Метод создания нового пользователя
     :param session: Асинхронная сессия SQLAlchemy.
     :param user: Объект данных пользователя (pydantic-модель).
     :return: Созданный объект пользователя.
     """
-    new_user = User(**user.dict())
+    new_user = User(**user.model_dump())
     async with session.begin():
         session.add(new_user)
         await session.commit()

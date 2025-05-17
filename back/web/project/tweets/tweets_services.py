@@ -1,5 +1,7 @@
 """
-Асинхронные сервисные функции для работы с твитами и лайками.
+tweets_services.py
+
+Модуль Асинхронные сервисные функции для работы с твитами и лайками.
 """
 
 from sqlalchemy import delete, insert, select, update
@@ -8,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..database import Like, Media, Tweet, User
-from ..exeptions import BackendExeption
+from ..exceptions import BackendException
 from ..users.user_services import get_current_user
 
 
@@ -29,7 +31,7 @@ async def get_tweet(session: AsyncSession, tweet_id: int):
     )
     tweet = query_result.scalars().one_or_none()
     if not tweet:
-        raise BackendExeption(
+        raise BackendException(
             error_type="NO TWEET", error_message="Не найдены твиты с таким id"
         )
     return tweet
@@ -109,7 +111,7 @@ async def delete_tweet(session: AsyncSession, api_key: str, tweet_id: int):
     )
     author_id = query_result.scalars().one_or_none()
     if author_id != user.id:
-        raise BackendExeption(
+        raise BackendException(
             error_type="NO ACCESS",
             error_message="Твит принадлежит другому пользователю",
         )
@@ -142,7 +144,9 @@ async def post_like(session: AsyncSession, api_key: str, tweet_id: int) -> int:
         new_like_id = insert_like_query.inserted_primary_key[0]
         await session.commit()
     except IntegrityError:
-        raise BackendExeption(error_type="BAD LIKE", error_message="Лайк уже поставлен")
+        raise BackendException(
+            error_type="BAD LIKE", error_message="Лайк уже поставлен"
+        )
 
     return new_like_id
 
@@ -161,7 +165,7 @@ async def delete_like(session: AsyncSession, api_key: str, tweet_id: int):
     )
     like = query_result.scalars().one_or_none()
     if not like:
-        raise BackendExeption(
+        raise BackendException(
             error_type="BAD LIKE DELETE",
             error_message="Нет лайка на данном твите",
         )

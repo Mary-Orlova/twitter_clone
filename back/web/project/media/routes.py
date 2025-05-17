@@ -1,5 +1,7 @@
 """
-Роут FastAPI для работы с медиафайлами (картинками).
+routes.py
+
+Модуль Роут для работы с медиафайлами (картинками).
 """
 
 from pathlib import Path
@@ -10,7 +12,7 @@ from fastapi import APIRouter, Depends, Response, Security, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_session
-from ..exeptions import BackendExeption
+from ..exceptions import BackendException
 from ..media.media_services import check_file, post_image
 from ..media.schemas import MediaOutSchema
 from ..schemas_overal import ErrorSchema
@@ -65,6 +67,6 @@ async def post_image_handler(
 
         # Сохранение информации о файле в базе данных
         return await post_image(session=session, image_name=name_for_db)
-    except BackendExeption as error:
+    except BackendException as error:
         response.status_code = 400
         return error
