@@ -44,4 +44,4 @@ jobs:
           pip install -r back/dev-requirements.txt
 
       - name: Run tests with pytest
-        run: pytest --cov=project tests/
+        run: pytest --cov=project back/web/tests/
