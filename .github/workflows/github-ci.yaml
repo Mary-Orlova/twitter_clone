@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r dev-requirements.txt
+          pip install -r back/dev-requirements.txt
       - name: Lint with flake8
         run: flake8 src || true
       - name: Format check with Black
@@ -32,6 +32,7 @@ jobs:
     needs: lint
 
     steps:
+      - uses: actions/checkout@v4
       - name: Set up Python 3.9
         uses: actions/setup-python@v3
         with:
@@ -40,7 +41,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r dev-requirements.txt
+          pip install -r back/dev-requirements.txt
 
       - name: Run tests with pytest
         run: pytest --cov=project tests/
