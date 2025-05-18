@@ -53,8 +53,8 @@ API написан для взаимодействия с готовым фро�
 
 **4.Установка и запуск**
 - Клонируйте репозиторий и перейдите в корень проекта:
-git clone https://gitlab.skillbox.ru/mariia_orlova/python_advanced_diploma
-cd python_advanced_diploma
+git clone https://github.com/Mary-Orlova/twitter_clone
+cd twitter_clone
 
 - Запуск проекта(только для unix-систем):
 docker compose up -d
